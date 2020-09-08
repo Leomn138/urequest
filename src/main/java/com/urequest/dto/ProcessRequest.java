@@ -9,7 +9,7 @@ import javax.validation.constraints.Pattern;
 
 @Getter
 @Setter
-public class ProcessRequestV1 {
+public class ProcessRequest {
 
     @NotNull
     private Integer customerId;

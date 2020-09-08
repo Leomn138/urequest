@@ -1,6 +1,5 @@
 package com.urequest.controller;
 
-import com.urequest.dto.ProcessRequestV1;
 import com.urequest.dto.ProcessResponseV1;
 import com.urequest.service.interfaces.RequestService;
 import org.slf4j.Logger;

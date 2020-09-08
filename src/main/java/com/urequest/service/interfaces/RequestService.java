@@ -1,6 +1,5 @@
 package com.urequest.service.interfaces;
 
-import com.urequest.dto.ProcessRequestV1;
 import com.urequest.dto.ProcessResponseV1;
 
 public interface RequestService {

@@ -3,12 +3,13 @@ package com.urequest.service;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.urequest.domain.Customer;
-import com.urequest.dto.ProcessRequestV1;
+import com.urequest.dto.ProcessRequest;
 import com.urequest.dto.ProcessResponseV1;
 import com.urequest.repository.CustomerRepository;
 import com.urequest.repository.IpBlacklistRepository;
 import com.urequest.repository.UserAgentBlacklistRepository;
 import com.urequest.service.interfaces.RequestService;
+import com.urequest.service.interfaces.ValidRequestProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,31 +31,31 @@ public class RequestServiceImpl implements RequestService {
     private final
     IpBlacklistRepository ipBlacklistRepository;
 
+    private final ValidRequestProcessor validRequestProcessor;
+
     @Autowired
-    public RequestServiceImpl(CustomerRepository customerRepository, UserAgentBlacklistRepository userAgentBlacklistRepository, IpBlacklistRepository ipBlacklistRepository) {
+    public RequestServiceImpl(CustomerRepository customerRepository, UserAgentBlacklistRepository userAgentBlacklistRepository, IpBlacklistRepository ipBlacklistRepository, ValidRequestProcessor validRequestProcessor) {
         this.customerRepository = customerRepository;
         this.userAgentBlacklistRepository = userAgentBlacklistRepository;
         this.ipBlacklistRepository = ipBlacklistRepository;
+        this.validRequestProcessor = validRequestProcessor;
     }
 
     @Override
     public ProcessResponseV1 process(String userAgent, String request) {
-        Optional<ProcessRequestV1> processRequest = parseRequest(request);
+        Optional<ProcessRequest> processRequest = parseRequest(request);
         boolean isValid = processRequest.isPresent() && isValid(userAgent, processRequest.get());
         if (isValid) {
-            return processValidRequest();
+            return processValidRequest(processRequest.get());
         }
         return processInvalidRequest();
     }
 
-    private Optional<ProcessRequestV1> parseRequest(String request) {
+    private Optional<ProcessRequest> parseRequest(String request) {
         try {
-            return Optional.of(new Gson().fromJson(request, ProcessRequestV1.class));
+            return Optional.of(new Gson().fromJson(request, ProcessRequest.class));
         } catch(JsonParseException ignored) { }
         return Optional.empty();
-    }
-
-    private void doSomething() {
     }
 
     private void emitValidRequestEvent() {
@@ -63,9 +64,9 @@ public class RequestServiceImpl implements RequestService {
     private void emitValidationErrorEvent() {
     }
 
-    private ProcessResponseV1 processValidRequest() {
+    private ProcessResponseV1 processValidRequest(ProcessRequest request) {
         emitValidRequestEvent();
-        doSomething();
+        validRequestProcessor.process(request);
         return new ProcessResponseV1(HttpStatus.OK);
     }
 
@@ -74,19 +75,19 @@ public class RequestServiceImpl implements RequestService {
         return new ProcessResponseV1(HttpStatus.BAD_REQUEST);
     }
 
-    private boolean isValid(String userAgent, ProcessRequestV1 request) {
+    private boolean isValid(String userAgent, ProcessRequest request) {
         return isRequestWellformed(request) && isValidIpAddress(request) &&
                 isValidUserAgent(userAgent) && isValidCustomer(request);
     }
 
-    private boolean isRequestWellformed(ProcessRequestV1 request) {
+    private boolean isRequestWellformed(ProcessRequest request) {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
 
         return validator.validate(request).isEmpty();
     }
 
-    private boolean isValidCustomer(ProcessRequestV1 request) {
+    private boolean isValidCustomer(ProcessRequest request) {
         Optional<Customer> customer = customerRepository.findById(request.getCustomerId());
         return customer.isPresent() && customer.get().isActive();
     }
@@ -95,7 +96,7 @@ public class RequestServiceImpl implements RequestService {
         return userAgentBlacklistRepository.findByUserAgent(userAgent).isEmpty();
     }
 
-    private boolean isValidIpAddress(ProcessRequestV1 request) {
+    private boolean isValidIpAddress(ProcessRequest request) {
         return ipBlacklistRepository.findByIp(request.getRemoteIp()).isEmpty();
     }
 }
