@@ -1,10 +1,10 @@
-package com.urequest.processor;
+package com.urequest.unit;
 
-import com.urequest.requestprocessor.RequestProcessorApplication;
+import com.urequest.RequestProcessorApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(classes=RequestProcessorApplication.class)
+@SpringBootTest(classes= RequestProcessorApplication.class)
 class RequestProcessorApplicationTests {
 
 	@Test

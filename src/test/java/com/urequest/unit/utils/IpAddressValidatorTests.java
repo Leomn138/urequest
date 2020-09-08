@@ -1,6 +1,6 @@
-package com.urequest.processor.utils;
+package com.urequest.unit.utils;
 
-import com.urequest.requestprocessor.utils.IpAddressValidator;
+import com.urequest.utils.IpAddressValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest(classes=IpAddressValidator.class)
+@SpringBootTest(classes= IpAddressValidator.class)
 public class IpAddressValidatorTests {
 
     @Test
