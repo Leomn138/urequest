@@ -5,9 +5,11 @@ import com.google.gson.JsonParseException;
 import com.urequest.domain.Customer;
 import com.urequest.dto.ProcessRequest;
 import com.urequest.dto.ProcessResponseV1;
+import com.urequest.dto.ValidatedRequestEvent;
 import com.urequest.repository.CustomerRepository;
 import com.urequest.repository.IpBlacklistRepository;
 import com.urequest.repository.UserAgentBlacklistRepository;
+import com.urequest.service.interfaces.KafkaProducerService;
 import com.urequest.service.interfaces.RequestService;
 import com.urequest.service.interfaces.ValidRequestProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,9 @@ import org.springframework.stereotype.Service;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class RequestServiceImpl implements RequestService {
@@ -33,12 +37,15 @@ public class RequestServiceImpl implements RequestService {
 
     private final ValidRequestProcessor validRequestProcessor;
 
+    private final KafkaProducerService<ValidatedRequestEvent> kafkaProducerService;
+
     @Autowired
-    public RequestServiceImpl(CustomerRepository customerRepository, UserAgentBlacklistRepository userAgentBlacklistRepository, IpBlacklistRepository ipBlacklistRepository, ValidRequestProcessor validRequestProcessor) {
+    public RequestServiceImpl(CustomerRepository customerRepository, UserAgentBlacklistRepository userAgentBlacklistRepository, IpBlacklistRepository ipBlacklistRepository, ValidRequestProcessor validRequestProcessor, KafkaProducerService<ValidatedRequestEvent> kafkaProducerService) {
         this.customerRepository = customerRepository;
         this.userAgentBlacklistRepository = userAgentBlacklistRepository;
         this.ipBlacklistRepository = ipBlacklistRepository;
         this.validRequestProcessor = validRequestProcessor;
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     @Override
@@ -58,20 +65,19 @@ public class RequestServiceImpl implements RequestService {
         return Optional.empty();
     }
 
-    private void emitValidRequestEvent() {
-    }
-
-    private void emitValidationErrorEvent() {
+    private void emitRequestValidatedEvent(boolean isValid) {
+        ValidatedRequestEvent event = new ValidatedRequestEvent(Instant.now().toEpochMilli(), isValid);
+        kafkaProducerService.send( "requests", UUID.randomUUID().toString(), event);
     }
 
     private ProcessResponseV1 processValidRequest(ProcessRequest request) {
-        emitValidRequestEvent();
+        emitRequestValidatedEvent(true);
         validRequestProcessor.process(request);
         return new ProcessResponseV1(HttpStatus.OK);
     }
 
     private ProcessResponseV1 processInvalidRequest() {
-        emitValidationErrorEvent();
+        emitRequestValidatedEvent(false);
         return new ProcessResponseV1(HttpStatus.BAD_REQUEST);
     }
 
