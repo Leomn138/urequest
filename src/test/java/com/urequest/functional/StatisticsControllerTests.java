@@ -17,7 +17,7 @@ public class StatisticsControllerTests {
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .body(
-                    containsString("{\"numberOfValidRequests\":0,\"numberOfInvalidRequests\":0,\"totalNumberOfRequests\":0,\"consolidated\":true,\"status\":\"OK\"}")
+                    containsString("{\"numberOfValidRequests\":0,\"numberOfInvalidRequests\":0,\"totalNumberOfRequests\":0,\"status\":\"OK\"}")
                 );
     }
 
@@ -29,7 +29,7 @@ public class StatisticsControllerTests {
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .body(
-                        containsString("{\"numberOfValidRequests\":10,\"numberOfInvalidRequests\":11,\"totalNumberOfRequests\":21,\"consolidated\":true,\"status\":\"OK\"}")
+                        containsString("{\"numberOfValidRequests\":10,\"numberOfInvalidRequests\":11,\"totalNumberOfRequests\":21,\"status\":\"OK\"}")
                 );
     }
 }
