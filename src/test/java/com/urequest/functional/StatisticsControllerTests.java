@@ -1,6 +1,5 @@
 package com.urequest.functional;
 
-import io.restassured.http.Header;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 

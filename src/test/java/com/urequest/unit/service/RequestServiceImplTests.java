@@ -58,6 +58,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         verify(validRequestProcessor, times(1)).process(any());
         assertEquals(response.getStatus(), HttpStatus.OK);
     }
@@ -69,6 +70,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -79,6 +81,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -89,6 +92,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -99,6 +103,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -109,6 +114,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -119,6 +125,7 @@ public class RequestServiceImplTests {
 
         ProcessResponseV1 response = requestService.process(userAgent, request);
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -134,6 +141,7 @@ public class RequestServiceImplTests {
 
         when(ipBlacklistRepository.findByIp(ip.getIp())).thenReturn(Optional.of(ip));
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -149,6 +157,7 @@ public class RequestServiceImplTests {
         when(ipBlacklistRepository.findByIp(any())).thenReturn(Optional.empty());
         when(userAgentBlacklistRepository.findByUserAgent(userAgent.getUserAgent())).thenReturn(Optional.of(userAgent));
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 
@@ -163,6 +172,7 @@ public class RequestServiceImplTests {
         when(userAgentBlacklistRepository.findByUserAgent(userAgent)).thenReturn(Optional.empty());
         when(customerRepository.findById(any())).thenReturn(Optional.empty());
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
     @Test
@@ -179,6 +189,7 @@ public class RequestServiceImplTests {
         when(userAgentBlacklistRepository.findByUserAgent(userAgent)).thenReturn(Optional.empty());
         when(customerRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
 
+        verify(validRequestProcessor, times(1)).emitRequestValidatedEvent(any());
         assertEquals(response.getStatus(), HttpStatus.BAD_REQUEST);
     }
 

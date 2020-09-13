@@ -5,23 +5,19 @@ import com.google.gson.JsonParseException;
 import com.urequest.domain.Customer;
 import com.urequest.dto.ProcessRequest;
 import com.urequest.dto.ProcessResponseV1;
-import com.urequest.dto.ValidatedRequestEvent;
+import com.urequest.dto.ValidatedRequest;
 import com.urequest.repository.CustomerRepository;
 import com.urequest.repository.IpBlacklistRepository;
 import com.urequest.repository.UserAgentBlacklistRepository;
-import com.urequest.service.interfaces.KafkaProducerService;
 import com.urequest.service.interfaces.RequestService;
 import com.urequest.service.interfaces.ValidRequestProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class RequestServiceImpl implements RequestService {
@@ -37,25 +33,30 @@ public class RequestServiceImpl implements RequestService {
 
     private final ValidRequestProcessor validRequestProcessor;
 
-    private final KafkaProducerService<ValidatedRequestEvent> kafkaProducerService;
-
     @Autowired
-    public RequestServiceImpl(CustomerRepository customerRepository, UserAgentBlacklistRepository userAgentBlacklistRepository, IpBlacklistRepository ipBlacklistRepository, ValidRequestProcessor validRequestProcessor, KafkaProducerService<ValidatedRequestEvent> kafkaProducerService) {
+    public RequestServiceImpl(CustomerRepository customerRepository, UserAgentBlacklistRepository userAgentBlacklistRepository, IpBlacklistRepository ipBlacklistRepository, ValidRequestProcessor validRequestProcessor) {
         this.customerRepository = customerRepository;
         this.userAgentBlacklistRepository = userAgentBlacklistRepository;
         this.ipBlacklistRepository = ipBlacklistRepository;
         this.validRequestProcessor = validRequestProcessor;
-        this.kafkaProducerService = kafkaProducerService;
     }
 
     @Override
     public ProcessResponseV1 process(String userAgent, String request) {
         Optional<ProcessRequest> processRequest = parseRequest(request);
-        boolean isValid = processRequest.isPresent() && isValid(userAgent, processRequest.get());
-        if (isValid) {
-            return processValidRequest(processRequest.get());
+        ValidatedRequest validatedRequest = ValidatedRequest.of(processRequest, isValid(userAgent, processRequest));
+        if (validatedRequest.isValid()) {
+            validRequestProcessor.process(validatedRequest);
         }
-        return processInvalidRequest();
+        validRequestProcessor.emitRequestValidatedEvent(validatedRequest);
+        return fillProcessResponse(validatedRequest.isValid());
+    }
+
+    private ProcessResponseV1 fillProcessResponse(boolean isValid) {
+        if (isValid) {
+            return new ProcessResponseV1(HttpStatus.OK);
+        }
+        return new ProcessResponseV1(HttpStatus.BAD_REQUEST);
     }
 
     private Optional<ProcessRequest> parseRequest(String request) {
@@ -65,25 +66,9 @@ public class RequestServiceImpl implements RequestService {
         return Optional.empty();
     }
 
-    private void emitRequestValidatedEvent(boolean isValid) {
-        ValidatedRequestEvent event = new ValidatedRequestEvent(Instant.now().toEpochMilli(), isValid);
-        kafkaProducerService.send( "requests", UUID.randomUUID().toString(), event);
-    }
-
-    private ProcessResponseV1 processValidRequest(ProcessRequest request) {
-        emitRequestValidatedEvent(true);
-        validRequestProcessor.process(request);
-        return new ProcessResponseV1(HttpStatus.OK);
-    }
-
-    private ProcessResponseV1 processInvalidRequest() {
-        emitRequestValidatedEvent(false);
-        return new ProcessResponseV1(HttpStatus.BAD_REQUEST);
-    }
-
-    private boolean isValid(String userAgent, ProcessRequest request) {
-        return isRequestWellformed(request) && isValidIpAddress(request) &&
-                isValidUserAgent(userAgent) && isValidCustomer(request);
+    private boolean isValid(String userAgent, Optional<ProcessRequest> request) {
+        return request.isPresent() && isRequestWellformed(request.get()) && isValidIpAddress(request.get()) &&
+                isValidUserAgent(userAgent) && isValidCustomer(request.get());
     }
 
     private boolean isRequestWellformed(ProcessRequest request) {

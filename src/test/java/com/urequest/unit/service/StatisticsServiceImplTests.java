@@ -3,8 +3,10 @@ package com.urequest.unit.service;
 import com.urequest.domain.Customer;
 import com.urequest.domain.HourlyStats;
 import com.urequest.dto.StatisticsResponseV1;
+import com.urequest.repository.CustomerRepository;
 import com.urequest.repository.HourlyStatsRepository;
 import com.urequest.service.StatisticsServiceImpl;
+import com.urequest.service.interfaces.RedisService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,10 +18,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest(classes= StatisticsServiceImpl.class)
@@ -30,6 +30,12 @@ public class StatisticsServiceImplTests {
 
     @Autowired
     private StatisticsServiceImpl statisticsService;
+
+    @MockBean
+    private RedisService redisService;
+
+    @MockBean
+    private CustomerRepository customerRepository;
 
     @MockBean
     private HourlyStatsRepository hourlyStatsRepository;
@@ -48,7 +54,6 @@ public class StatisticsServiceImplTests {
         assertEquals(response.getNumberOfInvalidRequests(), 0);
         assertEquals(response.getNumberOfValidRequests(), 0);
         assertEquals(response.getTotalNumberOfRequests(), 0);
-        assertTrue(response.isConsolidated());
         assertEquals(response.getStatus(), HttpStatus.OK);
     }
 
@@ -72,8 +77,40 @@ public class StatisticsServiceImplTests {
         assertEquals(response.getNumberOfInvalidRequests(), 45);
         assertEquals(response.getNumberOfValidRequests(), 45);
         assertEquals(response.getTotalNumberOfRequests(), 90);
-        assertTrue(response.isConsolidated());
         assertEquals(response.getStatus(), HttpStatus.OK);
     }
+    @Test
+    void refreshConsolidatedData_does_nothing_when_there_is_nothing_to_process() {
+        String updatedSetKey = "requests-changed-keys-set";
 
+        statisticsService.refreshConsolidatedData();
+
+        when(redisService.spop(updatedSetKey)).thenReturn(null);
+        verify(redisService, times(1)).spop(updatedSetKey);
+    }
+
+    @Test
+    void refreshConsolidatedData_gets_incremented_data_and_updates_valid_entries_correctly() {
+
+    }
+
+    @Test
+    void refreshConsolidatedData_gets_incremented_data_and_updates_invalid_entries_correctly() {
+
+    }
+
+    @Test
+    void refreshConsolidatedData_gets_incremented_data_and_creates_new_entry_on_relational_db() {
+
+    }
+
+    @Test
+    void refreshConsolidatedData_keeps_running_when_an_entry_cannot_be_parsed() {
+
+    }
+
+    @Test
+    void refreshConsolidatedData_gets_incremented_data_and_updates_on_relational_db_when_customer_is_missing() {
+
+    }
 }

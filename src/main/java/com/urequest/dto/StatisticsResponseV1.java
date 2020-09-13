@@ -10,6 +10,5 @@ public class StatisticsResponseV1 {
     private Long numberOfValidRequests;
     private Long numberOfInvalidRequests;
     private Long totalNumberOfRequests;
-    private boolean consolidated;
     private HttpStatus status;
 }

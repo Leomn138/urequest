@@ -1,7 +1,9 @@
 package com.urequest.service.interfaces;
 
-import com.urequest.dto.ProcessRequest;
+import com.urequest.dto.ValidatedRequest;
 
 public interface ValidRequestProcessor {
-    void process(ProcessRequest request);
+    void process(ValidatedRequest validatedRequest);
+
+    void emitRequestValidatedEvent(ValidatedRequest validatedRequest);
 }
